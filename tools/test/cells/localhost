@@ -1,0 +1,16 @@
+# ONOS from localhost cell
+ 
+# the address of the VM to install the package onto
+export OC1="127.0.0.1"
+ 
+# the default address used by ONOS utilities when none are supplied
+export OCI="127.0.0.1"
+ 
+# the ONOS apps to load at startup
+export ONOS_APPS="drivers,openflow,fwd,proxyarp,mobility"
+ 
+# the Mininet VM (if you have one)
+export OCN="192.168.56.102"
+ 
+# pattern to specify which address to use for inter-ONOS node communication (not used with single-instance core)
+export ONOS_NIC="192.168.56.*"

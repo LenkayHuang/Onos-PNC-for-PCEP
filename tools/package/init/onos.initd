@@ -1,0 +1,71 @@
+#! /bin/bash
+# -----------------------------------------------------------------------------
+# init.d script to run ONOS
+#
+# This provides the core for an ONOS service in a variety of environments,
+# including init.d, upstart, and systemd. It can also be invoked directly.
+# If it is invoked by a boot system, environment variables will usually be
+# empty and the default values will be used.
+# -----------------------------------------------------------------------------
+
+ONOS_HOME=${ONOS_HOME:-/opt/onos}
+[ -f $ONOS_HOME/options ] && . $ONOS_HOME/options
+ONOS_USER=${ONOS_USER:-root}
+ONOS_GROUP=${ONOS_GROUP:-$ONOS_USER}
+ONOS_OPTS=${ONOS_OPTS:-server}
+ONOS_PID=${ONOS_PID:-/var/run/onos.pid}
+
+start () {
+    mkdir -p $ONOS_HOME/var 2>/dev/null && chown $ONOS_USER.$ONOS_GROUP $ONOS_HOME/var
+    mkdir -p $ONOS_HOME/config 2>/dev/null && chown $ONOS_USER.$ONOS_GROUP $ONOS_HOME/config
+    [ ! -h $ONOS_HOME/log ]  && ln -s $ONOS_HOME/karaf/data/log $ONOS_HOME/log || :
+    # Start ONOS if it's not already running
+    if ! status > /dev/null; then
+        start-stop-daemon --signal INT --start --chuid $ONOS_USER \
+            --background --exec $ONOS_HOME/bin/onos-service \
+            -- $ONOS_OPTS >$ONOS_HOME/var/stdout.log 2>$ONOS_HOME/var/stderr.log
+    else
+        echo "ONOS/karaf is already running"
+    fi
+}
+
+stop () {
+    if status> /dev/null; then
+        $ONOS_HOME/karaf/bin/stop
+    else
+        echo "ONOS/karaf is not running"
+    fi
+}
+
+restart () {
+        stop
+        start
+}
+
+status () {
+    # karaf status returns 0 if running, 1 if not
+    $ONOS_HOME/karaf/bin/status
+}
+
+case $1 in
+    start)
+        start
+	;;
+    stop | force-stop)
+        stop
+        ;;
+    restart)
+        shift
+        restart "$@"
+        ;;
+    status)
+        status
+        exit $?
+        ;;
+    *)
+        echo "Usage: $0 {start|stop|restart|status}" >&2
+        exit 1
+        ;;
+esac
+
+exit 0
